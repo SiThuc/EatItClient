@@ -1,6 +1,7 @@
 package phamthuc.android.eatitclient.Adapter;
 
 import android.content.Context;
+import android.media.MediaCodec;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -61,6 +62,10 @@ public class MyCategoriesAdapter extends RecyclerView.Adapter<MyCategoriesAdapte
     @Override
     public int getItemCount() {
         return categoryModelList.size();
+    }
+
+    public List<CategoryModel> getListCategory() {
+        return categoryModelList;
     }
 
     public class MyViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
