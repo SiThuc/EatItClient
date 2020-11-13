@@ -50,7 +50,7 @@ public class Common {
     public static final String ORDER_REF = "Orders";
     public static final String NOTI_TITLE = "title";
     public static final String NOTI_CONTENT = "content";
-    private static final String TOKEN_REF = "Tokens";
+    public static final String TOKEN_REF = "Tokens";
     public static UserModel currentUser;
     public static CategoryModel categorySelected;
     public static FoodModel selectedFood;
@@ -167,5 +167,9 @@ public class Common {
                 .addOnFailureListener( e -> {
                     Toast.makeText( context, ""+e.getMessage(), Toast.LENGTH_SHORT ).show();
                 } );
+    }
+
+    public static String createTopicOrder() {
+        return new StringBuilder( "/topics/new_order" ).toString();
     }
 }

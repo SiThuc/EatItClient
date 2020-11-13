@@ -58,8 +58,10 @@ import org.greenrobot.eventbus.ThreadMode;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -87,6 +89,10 @@ import phamthuc.android.eatitclient.EventBus.MenuItemBack;
 import phamthuc.android.eatitclient.EventBus.UpdateItemInCart;
 import phamthuc.android.eatitclient.Model.Order;
 import phamthuc.android.eatitclient.R;
+import phamthuc.android.eatitclient.Remote.FCMResponse;
+import phamthuc.android.eatitclient.Remote.FCMSendData;
+import phamthuc.android.eatitclient.Remote.IFCMService;
+import phamthuc.android.eatitclient.Remote.RetrofitFCMClient;
 
 public class CartFragment extends Fragment implements ILoadTimeFromFirebaseListener {
     CompositeDisposable compositeDisposable = new CompositeDisposable(  );
@@ -98,6 +104,8 @@ public class CartFragment extends Fragment implements ILoadTimeFromFirebaseListe
     LocationCallback locationCallback;
     FusedLocationProviderClient fusedLocationProviderClient;
     Location currentLocation;
+
+    IFCMService ifcmService;
 
 
     @BindView(R.id.recycler_cart)
@@ -253,7 +261,8 @@ public class CartFragment extends Fragment implements ILoadTimeFromFirebaseListe
 
                         @Override
                         public void onError(Throwable e) {
-                            Toast.makeText( getContext(), ""+e.getMessage(), Toast.LENGTH_SHORT ).show();
+                            if(!e.getMessage().contains( "Query returned empty result set" ))
+                                Toast.makeText( getContext(), ""+e.getMessage(), Toast.LENGTH_SHORT ).show();
 
                         }
                     } );
@@ -306,8 +315,23 @@ public class CartFragment extends Fragment implements ILoadTimeFromFirebaseListe
 
                                 @Override
                                 public void onSuccess(Integer integer) {
-                                    Toast.makeText( getContext(), "Order placed successfully!", Toast.LENGTH_SHORT ).show();
+                                    Map<String, String> notiData = new HashMap<>(  );
+                                    notiData.put( Common.NOTI_TITLE, "New Order" );
+                                    notiData.put( Common.NOTI_CONTENT, "You have new order from"+Common.currentUser.getPhone() );
 
+                                    FCMSendData sendData = new FCMSendData( Common.createTopicOrder(), notiData );
+
+                                    compositeDisposable.add( ifcmService.sendNotification( sendData )
+                                    .subscribeOn( Schedulers.io() )
+                                    .observeOn( AndroidSchedulers.mainThread() )
+                                    .subscribe( fcmResponse -> {
+                                        Toast.makeText( getContext(), "Order placed successfully!", Toast.LENGTH_SHORT ).show();
+                                        EventBus.getDefault().postSticky( new CounterCartEvent( true ) );
+
+                                    }, throwable -> {
+                                        Toast.makeText( getContext(), "Order was sent but failure to send notification", Toast.LENGTH_SHORT ).show();
+                                        EventBus.getDefault().postSticky( new CounterCartEvent( true ) );
+                                    } ));
                                 }
 
                                 @Override
@@ -353,6 +377,8 @@ public class CartFragment extends Fragment implements ILoadTimeFromFirebaseListe
                              @Nullable Bundle savedInstanceState) {
         mViewModel = ViewModelProviders.of( this ).get( CartViewModel.class );
         View root = inflater.inflate( R.layout.cart_fragment, container, false );
+
+        ifcmService = RetrofitFCMClient.getInstance().create( IFCMService.class );
 
         listener = this;
 
@@ -618,7 +644,8 @@ public class CartFragment extends Fragment implements ILoadTimeFromFirebaseListe
 
                     @Override
                     public void onError(Throwable e) {
-                        Toast.makeText( getContext(), "[SUM CART]"+e.getMessage(), Toast.LENGTH_SHORT ).show();
+                        if(!e.getMessage().contains( "Query returned empty result set" ))
+                            Toast.makeText( getContext(), ""+e.getMessage(), Toast.LENGTH_SHORT ).show();
                     }
                 } );
     }
