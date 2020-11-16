@@ -146,7 +146,10 @@ public class Common {
 
         }
 
-        Notification.Builder builder = new Notification.Builder(context, NOTIFICATION_CHANNEL_ID);
+        Notification.Builder builder = null;
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            builder = new Notification.Builder(context, NOTIFICATION_CHANNEL_ID);
+        }
         builder.setContentTitle( title )
                 .setContentText( content )
                 .setAutoCancel( true )
